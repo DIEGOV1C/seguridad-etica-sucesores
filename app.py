@@ -10,10 +10,10 @@ from docx.shared import Pt
 app = Flask(__name__)
 CORS(app)  # Habilita CORS para todas las rutas y orígenes
 
-# Configuración de S3
-S3_BUCKET = "sucesores-data"
-S3_KEY = "AKIAT7JJUU7LU6RWDJB6"
-S3_SECRET = "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"
+# Configuración de S3 utilizando variables de entorno
+S3_BUCKET = os.getenv("S3_BUCKET", "sucesores-data")
+S3_KEY = os.getenv("S3_KEY")
+S3_SECRET = os.getenv("S3_SECRET")
 s3_client = boto3.client('s3', aws_access_key_id=S3_KEY, aws_secret_access_key=S3_SECRET)
 
 def replace_text_in_table(table, replacements):
@@ -47,20 +47,20 @@ def generate_agreement():
                     for run in paragraph.runs:
                         if '<<COMPANY_NAME>>' in run.text:
                             run.text = run.text.replace('<<COMPANY_NAME>>', data['companyName'])
-                            run.font.name = 'Arial'  # Cambia el nombre de la fuente
-                            run.font.size = Pt(12)  # Cambia el tamaño de la fuente
+                            run.font.name = 'Arial'
+                            run.font.size = Pt(12)
                         if '<<REPRESENTATIVE_NAME>>' in run.text:
                             run.text = run.text.replace('<<REPRESENTATIVE_NAME>>', data['representativeName'])
-                            run.font.name = 'Arial'  # Cambia el nombre de la fuente
-                            run.font.size = Pt(12)  # Cambia el tamaño de la fuente
+                            run.font.name = 'Arial'
+                            run.font.size = Pt(12)
                         if '<<POSITION>>' in run.text:
                             run.text = run.text.replace('<<POSITION>>', data['position'])
-                            run.font.name = 'Arial'  # Cambia el nombre de la fuente
-                            run.font.size = Pt(12)  # Cambia el tamaño de la fuente
+                            run.font.name = 'Arial'
+                            run.font.size = Pt(12)
                         if '<<DATE>>' in run.text:
                             run.text = run.text.replace('<<DATE>>', current_date)
-                            run.font.name = 'Arial'  # Cambia el nombre de la fuente
-                            run.font.size = Pt(12)  # Cambia el tamaño de la fuente
+                            run.font.name = 'Arial'
+                            run.font.size = Pt(12)
 
     # Guardar el documento generado
     output_filename = f"Acuerdo_{data['companyName']}.docx"
@@ -76,8 +76,8 @@ def generate_agreement():
         if os.path.exists(output_filename):
             os.remove(output_filename)
 
-    # Confirmar que el archivo se guardó exitosamente sin proporcionar enlaces de descarga
     return {"message": "El acuerdo ha sido almacenado correctamente."}, 200
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Configuración para entorno de producción
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
