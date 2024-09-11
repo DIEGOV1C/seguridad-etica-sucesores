@@ -78,6 +78,11 @@ def generate_agreement():
 
     return {"message": "El acuerdo ha sido almacenado correctamente."}, 200
 
+@app.route('/health-check', methods=['GET'])
+def health_check():
+    return {"status": "ok"}, 200
+
+
 if __name__ == "__main__":
     # Configuración para entorno de producción
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
