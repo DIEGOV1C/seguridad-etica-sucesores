@@ -26,7 +26,10 @@ def replace_text_in_table(table, replacements):
 
 @app.route('/generate-agreement', methods=['POST'])
 def generate_agreement():
-    data = request.json
+    # Obtener los datos del formulario
+    company_name = request.form.get('companyName')
+    representative_name = request.form.get('representativeName')
+    position = request.form.get('position')
 
     # Descargar la plantilla desde S3
     try:
@@ -46,15 +49,15 @@ def generate_agreement():
                 for paragraph in cell.paragraphs:
                     for run in paragraph.runs:
                         if '<<COMPANY_NAME>>' in run.text:
-                            run.text = run.text.replace('<<COMPANY_NAME>>', data['companyName'])
+                            run.text = run.text.replace('<<COMPANY_NAME>>', company_name)
                             run.font.name = 'Arial'
                             run.font.size = Pt(12)
                         if '<<REPRESENTATIVE_NAME>>' in run.text:
-                            run.text = run.text.replace('<<REPRESENTATIVE_NAME>>', data['representativeName'])
+                            run.text = run.text.replace('<<REPRESENTATIVE_NAME>>', representative_name)
                             run.font.name = 'Arial'
                             run.font.size = Pt(12)
                         if '<<POSITION>>' in run.text:
-                            run.text = run.text.replace('<<POSITION>>', data['position'])
+                            run.text = run.text.replace('<<POSITION>>', position)
                             run.font.name = 'Arial'
                             run.font.size = Pt(12)
                         if '<<DATE>>' in run.text:
@@ -63,10 +66,10 @@ def generate_agreement():
                             run.font.size = Pt(12)
 
     # Guardar el documento generado
-    output_filename = f"Acuerdo_{data['companyName']}.docx"
+    output_filename = f"Acuerdo_{company_name}.docx"
     doc.save(output_filename)
 
-    # Subir a S3
+    # Subir el documento a S3
     try:
         s3_client.upload_file(output_filename, S3_BUCKET, output_filename)
     except Exception as e:
@@ -76,12 +79,29 @@ def generate_agreement():
         if os.path.exists(output_filename):
             os.remove(output_filename)
 
+    # Manejar el archivo opcional de certificado
+    if 'file' in request.files:
+        certificate_file = request.files['file']
+        if certificate_file:
+            certificate_filename = f"Certificado_{company_name}_{certificate_file.filename}"
+            # Guardar el archivo de certificado temporalmente
+            certificate_file.save(certificate_filename)
+
+            # Subir el archivo de certificado a S3
+            try:
+                s3_client.upload_file(certificate_filename, S3_BUCKET, certificate_filename)
+            except Exception as e:
+                return {"error": str(e)}, 500
+            finally:
+                # Eliminar el archivo local después de subir
+                if os.path.exists(certificate_filename):
+                    os.remove(certificate_filename)
+
     return {"message": "El acuerdo ha sido almacenado correctamente."}, 200
 
 @app.route('/health-check', methods=['GET'])
 def health_check():
     return 'OK', 200
-
 
 if __name__ == "__main__":
     # Configuración para entorno de producción
