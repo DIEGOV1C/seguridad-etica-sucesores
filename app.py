@@ -8,7 +8,7 @@ from io import BytesIO
 from docx.shared import Pt
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://sucesores-page.vercel.app"}})
+CORS(app, resources={r"/*": {"origins": "https://acuerdo-sucesores.vercel.app/"}})
 
 # Configuración de S3 utilizando variables de entorno
 S3_BUCKET = os.getenv("S3_BUCKET", "sucesores-data")
